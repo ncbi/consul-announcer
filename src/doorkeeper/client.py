@@ -25,10 +25,8 @@ def setup_logging(verbosity):
         logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler()
         if verbosity == 1:
-            handler.setLevel(logging.ERROR)
-        if verbosity == 2:
-            handler.setLevel(logging.WARNING)
-        if verbosity >= 3:
+            handler.setLevel(logging.INFO)
+        if verbosity >= 2:
             handler.setLevel(logging.DEBUG)
         logger.addHandler(handler)
 
@@ -56,6 +54,13 @@ def main():
     )
 
     parser.add_argument(
+        '--interval',
+        default=1,
+        help="Polling interval",
+        metavar='path'
+    )
+
+    parser.add_argument(
         '--verbose',
         '-v',
         action='count',
@@ -75,5 +80,4 @@ def main():
     args = parser.parse_args(sys.argv[1:split_at])
     cmd_args = sys.argv[split_at + 1:]
     setup_logging(args.verbose)
-    Service(args.agent, cmd_args, args.config)
-    # TODO
+    Service(args.agent, cmd_args, args.interval, args.config)
