@@ -75,5 +75,5 @@ def main():
     args = parser.parse_args(sys.argv[1:split_at])
     cmd_args = sys.argv[split_at + 1:]
     setup_logging(args.verbose)
-    service = Service(args.agent, cmd_args, args.config)
+    Service(args.agent, cmd_args, args.config)
     # TODO
