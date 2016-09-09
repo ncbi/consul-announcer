@@ -1,6 +1,6 @@
 # consul-doorkeeper
 
-Doorkeeper for your services discovered via [Consul](https://www.consul.io/).
+Doorkeeper for services discovered by [Consul](https://www.consul.io/).
 
 Functionality:
 
