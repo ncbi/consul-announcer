@@ -34,10 +34,10 @@ class Service(object):
         :param config:
         """
         self.connect(agent_address)
-        self.invoke_process(cmd)
         self.parse_services(config)
         self.parse_interval(interval)
         self.register_services()
+        self.invoke_process(cmd)
         self.poll()
         self.deregister_services()
 
@@ -168,6 +168,7 @@ class Service(object):
         - If it's not ``None`` and it's greater than min TTL - log a warning
 
         :param float interval:
+        :raises: DoorkeeperValidationError
         """
         logger.info("Processing the polling interval")
 
@@ -187,6 +188,8 @@ class Service(object):
                         interval, min_ttl
                     )
                 )
+        elif interval is None:
+            raise DoorkeeperImproperlyConfigured("Polling interval is undefined")
 
     def get_min_ttl(self):
         """
@@ -262,6 +265,6 @@ class Service(object):
         """
         Cleanup on object destruction.
         """
-        if self.process.poll() is None:
+        if self.process and self.process.poll() is None:
             logger.info("Killing the process {} (cleanup)".format(self.process.pid))
             self.process.kill()
