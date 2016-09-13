@@ -23,23 +23,6 @@ cd consul-doorkeeper
 pip install -r requirements/test.txt -e .
 ```
 
-## Test
-
-Test configuration is defined in the `tox.ini` file and includes `py.test` tests
-and `flake8` source code checker.
-
-You can run all of the tests:
-
-```
-python setup.py test
-```
-
-To run just the `py.test` tests, not `flake8`, and to re-use the current `virtualenv`:
-
-```sh
-py.test
-```
-
 ## Usage
 
 ```sh
@@ -76,3 +59,18 @@ Output levels:
 * by default only errors and warnings will be printed
 * `-v` will show info messages
 * `-vv` will show info and debug messages
+
+## Test
+
+Test configuration is defined in the `tox.ini` file and includes `py.test` tests
+and `flake8` source code checker. You can run all of the tests:
+
+```
+python setup.py test
+```
+
+To run just the `py.test` tests, not `flake8`, and to re-use the current `virtualenv`:
+
+```sh
+py.test
+```
