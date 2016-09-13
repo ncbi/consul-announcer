@@ -2,6 +2,7 @@ import argparse
 import logging
 import sys
 
+from doorkeeper.exceptions import DoorkeeperImproperlyConfigured
 from doorkeeper.service import Service
 
 
@@ -24,11 +25,15 @@ def setup_logging(verbosity):
         logger = logging.getLogger('doorkeeper')
         logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter('[%(levelname)s] %(name)s: %(message)s'))
         if verbosity == 1:
             handler.setLevel(logging.INFO)
         if verbosity >= 2:
             handler.setLevel(logging.DEBUG)
         logger.addHandler(handler)
+
+
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -55,9 +60,9 @@ def main():
 
     parser.add_argument(
         '--interval',
-        default=1,
         help="Polling interval",
-        metavar='path'
+        metavar='seconds',
+        type=float
     )
 
     parser.add_argument(
@@ -78,6 +83,11 @@ def main():
 
     split_at = sys.argv.index('--')
     args = parser.parse_args(sys.argv[1:split_at])
-    cmd_args = sys.argv[split_at + 1:]
+    cmd = ' '.join(sys.argv[split_at + 1:])
     setup_logging(args.verbose)
-    Service(args.agent, cmd_args, args.interval, args.config)
+
+    try:
+        Service(args.agent, args.config, cmd, args.interval)
+    except DoorkeeperImproperlyConfigured as e:
+        logger.error(e)
+        sys.exit(1)
