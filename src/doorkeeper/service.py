@@ -5,6 +5,7 @@ import subprocess
 import time
 
 import consul
+from consul.base import CB
 from requests.structures import CaseInsensitiveDict
 
 from doorkeeper.exceptions import DoorkeeperImproperlyConfigured
@@ -20,6 +21,7 @@ class Service(object):
     services = None
     ttl_checks = None
     interval = None
+    interval_ttl_multiplier = 0.1
 
     def __init__(self, agent_address, config, cmd, interval=1):
         """
@@ -33,15 +35,27 @@ class Service(object):
         """
         self.connect(agent_address)
         self.invoke_process(cmd)
-        self.setup(config, interval)
+        self.parse_services(config)
+        self.parse_interval(interval)
+        self.register_services()
         self.poll()
-        self.tear_down()
+        self.deregister_services()
 
     def connect(self, agent_address):
+        """
+        Connect to Consul HTTP API.
+
+        :param str agent_address:
+        """
         logger.info("Connecting to Consul agent: {}".format(agent_address))
-        self.consul = consul.Consul(agent_address.split(':', 1))
+        self.consul = consul.Consul(*agent_address.split(':', 1))
 
     def invoke_process(self, cmd):
+        """
+        Invoke the sub-process to monitor.
+
+        :param str cmd:
+        """
         logger.info("Starting process: {}".format(cmd))
         self.process = subprocess.Popen(cmd.split())
         self.handle_signals()
@@ -70,23 +84,15 @@ class Service(object):
         """
         self.process.send_signal(signal_number)
 
-    def setup(self, config, interval):
+    def parse_services(self, config):
         """
-        Parse Consul services config file and process the polling interval.
+        Parse Consul services config.
 
         See https://www.consul.io/docs/agent/services.html
         and https://www.consul.io/docs/agent/checks.html.
 
         :param str config: Config file path
-        :param float interval: Fixed interval value or None.
         :raises: DoorkeeperValidationError
-        """
-        self.parse_services(config)
-        self.parse_interval(interval)
-
-    def parse_services(self, config):
-        """
-        Parse Consul services config.
         """
         logger.info("Parsing services definition in \"{}\" config file".format(config))
 
@@ -155,6 +161,14 @@ class Service(object):
                     self.ttl_checks['service:{}:{}'.format(service_id, i)] = check
 
     def parse_interval(self, interval):
+        """
+        Process polling interval.
+
+        - If it's ``None`` - calculate it as min TTL / 10
+        - If it's not ``None`` and it's greater than min TTL - log a warning
+
+        :param float interval:
+        """
         logger.info("Processing the polling interval")
 
         self.interval = interval
@@ -165,11 +179,11 @@ class Service(object):
 
         if min_ttl is not None:
             if interval is None:
-                self.interval = min_ttl / 10
+                self.interval = min_ttl * self.interval_ttl_multiplier
                 logger.debug("Polling interval is auto calculated as min TTL / 10")
             elif interval > min_ttl:
                 logger.warning(
-                    "Polling interval ({} sec) is greater than the minimum TTL ({} sec)".format(
+                    "Polling interval ({} sec) is greater than min TTL ({} sec)".format(
                         interval, min_ttl
                     )
                 )
@@ -186,6 +200,34 @@ class Service(object):
             if min_ttl is None or ttl < min_ttl:
                 min_ttl = ttl
         return min_ttl
+
+    def register_services(self):
+        """
+        Register services in Consul agent.
+        """
+        logger.info("Registering Consul services")
+        for service_id, service_conf in self.services.items():
+            logger.debug("Registering service \"{}\": {}".format(service_id, service_conf))
+            # Use low-level ``self.consul.http`` instead of ``self.consul.agent.service.register``
+            # because we don't want to parse the service config - we just pass it as-is.
+            success = self.consul.http.put(
+                CB.bool(),
+                '/v1/agent/service/register',
+                data=json.dumps(service_conf, default=dict)
+            )
+            if not success:
+                logger.warning("Service \"{}\" was not registered".format(service_id))
+
+    def deregister_services(self):
+        """
+        Deregister services in Consul agent.
+        """
+        logger.info("Deregistering Consul services")
+        for service_id in self.services:
+            logger.debug("Deregistering service \"{}\"".format(service_id))
+            success = self.consul.agent.service.deregister(service_id)
+            if not success:
+                logger.warning("Service \"{}\" was not deregistered".format(service_id))
 
     def poll(self):
         """
@@ -204,10 +246,17 @@ class Service(object):
                 break
 
     def pass_ttl_checks(self):
-        logger.debug("Mark all TTL checks as passed")
-
-    def tear_down(self):
-        logger.info("Deregistering Consul service")
+        """
+        Mark all the registered TTL checks as passed.
+        """
+        if self.ttl_checks:
+            statuses = []
+            for check_id in self.ttl_checks:
+                success = self.consul.agent.check.ttl_pass(check_id)
+                statuses.append('\"{}\" - {}'.format(check_id, 'passed' if success else 'failed'))
+            logger.debug("Updating TTL checks: {}".format(', '.join(statuses)))
+        else:
+            logger.debug("No TTL checks registered")
 
     def __del__(self):
         """

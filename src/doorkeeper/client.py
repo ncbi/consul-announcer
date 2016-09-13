@@ -21,16 +21,20 @@ def setup_logging(verbosity):
 
     :param int verbosity:
     """
-    if verbosity:
-        logger = logging.getLogger('doorkeeper')
-        logger.setLevel(logging.DEBUG)
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter('[%(levelname)s] %(name)s: %(message)s'))
-        if verbosity == 1:
-            handler.setLevel(logging.INFO)
-        if verbosity >= 2:
-            handler.setLevel(logging.DEBUG)
-        logger.addHandler(handler)
+    logger = logging.getLogger('doorkeeper')
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(
+        '%(asctime)s.%(msecs)03d - %(levelname)s - %(name)s: %(message)s', datefmt='%H:%M:%S'
+    ))
+    logger.addHandler(handler)
+
+    if not verbosity:
+        handler.setLevel(logging.WARNING)
+    elif verbosity == 1:
+        handler.setLevel(logging.INFO)
+    elif verbosity >= 2:
+        handler.setLevel(logging.DEBUG)
 
 
 logger = logging.getLogger(__name__)
