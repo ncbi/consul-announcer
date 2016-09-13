@@ -42,4 +42,37 @@ py.test
 
 ## Usage
 
-TODO.
+```sh
+consul-doorkeeper [-h] [--agent hostname[:port]] --config path [--interval seconds] [--verbose] -- command [arguments]
+
+Arguments:
+  -h, --help               show this help message and exit
+  --agent hostname[:port]  Consul agent address: hostname[:port]. Default: localhost (default port is 8500)
+  --config path            Consul checks configuration file
+  --interval seconds       Polling interval
+  --verbose, -v            Verbose output. You can specify -v or -vv
+```
+
+Minimal usage:
+
+```sh
+consul-doorkeeper --config=conf.json -- some-sub-process --with --arguments
+```
+
+In this case polling interval will be calculated as min TTL / 10. But you can provide your own:
+
+```sh
+consul-doorkeeper --interval=3 ...
+```
+
+Default agent address is `localhost` ()with default port `8500`). You can provide your own:
+
+```sh
+consul-doorkeeper --agent=1.2.3.4:5678 ...
+```
+
+Output levels:
+
+* by default only errors and warnings will be printed
+* `-v` will show info messages
+* `-vv` will show info and debug messages

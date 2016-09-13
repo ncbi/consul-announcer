@@ -51,7 +51,7 @@ def main():
         '--agent',
         default='localhost',
         help="Consul agent address: hostname[:port]. "
-             "Default: localhost (default agent port is 8500)",
+             "Default: localhost (default port is 8500)",
         metavar='hostname[:port]'
     )
 
@@ -73,7 +73,7 @@ def main():
         '--verbose',
         '-v',
         action='count',
-        help="Verbose output",
+        help="Verbose output. You can specify -v or -vv"
     )
 
     if '--' not in sys.argv:
