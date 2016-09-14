@@ -4,8 +4,12 @@ import sys
 
 from requests.exceptions import ConnectionError
 
+from doorkeeper import root_logging_handler
 from doorkeeper.exceptions import DoorkeeperImproperlyConfigured
 from doorkeeper.service import Service
+
+
+logger = logging.getLogger(__name__)
 
 
 class ArgsFormatter(argparse.HelpFormatter):
@@ -15,31 +19,6 @@ class ArgsFormatter(argparse.HelpFormatter):
         """
         actions.append(argparse._StoreAction(option_strings=[], dest="-- command [arguments]"))
         return super(ArgsFormatter, self).add_usage(usage, actions, groups, prefix)
-
-
-def setup_logging(verbosity):
-    """
-    Setup logging for all 'doorkeeper.*' Python modules, based on passed verbosity level.
-
-    :param int verbosity:
-    """
-    logger = logging.getLogger('doorkeeper')
-    logger.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(
-        '%(asctime)s.%(msecs)03d - %(levelname)s - %(name)s: %(message)s', datefmt='%H:%M:%S'
-    ))
-    logger.addHandler(handler)
-
-    if not verbosity:
-        handler.setLevel(logging.WARNING)
-    elif verbosity == 1:
-        handler.setLevel(logging.INFO)
-    elif verbosity >= 2:
-        handler.setLevel(logging.DEBUG)
-
-
-logger = logging.getLogger(__name__)
 
 
 def main():
@@ -85,13 +64,19 @@ def main():
             sys.exit()
         else:
             parser.print_usage()
-            print("{}: error: command is not specified".format(parser.prog))
-            sys.exit(1)
+            sys.stderr.write("{}: error: command is not specified".format(parser.prog))
+            sys.exit(2)
 
     split_at = sys.argv.index('--')
     args = parser.parse_args(sys.argv[1:split_at])
     cmd = ' '.join(sys.argv[split_at + 1:])
-    setup_logging(args.verbose)
+
+    if not args.verbose:
+        root_logging_handler.setLevel(logging.WARNING)
+    elif args.verbose == 1:
+        root_logging_handler.setLevel(logging.INFO)
+    elif args.verbose >= 2:
+        root_logging_handler.setLevel(logging.DEBUG)
 
     try:
         Service(args.agent, args.config, cmd, args.interval)
