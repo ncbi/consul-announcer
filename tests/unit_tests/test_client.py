@@ -1,3 +1,6 @@
+"""
+Test ``doorkeeper.client`` (CLI).
+"""
 import logging
 import sys
 

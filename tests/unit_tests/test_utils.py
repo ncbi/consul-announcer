@@ -1,4 +1,7 @@
 # encoding: utf-8
+"""
+Test ``doorkeeper.utils``.
+"""
 from datetime import timedelta
 
 from doorkeeper.utils import parse_duration
