@@ -48,7 +48,7 @@ In this case polling interval will be calculated as min TTL / 10. But you can pr
 consul-doorkeeper --interval=3 ...
 ```
 
-Default agent address is `localhost` ()with default port `8500`). You can provide your own:
+Default agent address is `localhost` (with default port `8500`). You can provide your own:
 
 ```sh
 consul-doorkeeper --agent=1.2.3.4:5678 ...
