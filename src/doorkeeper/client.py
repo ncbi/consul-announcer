@@ -2,6 +2,8 @@ import argparse
 import logging
 import sys
 
+from requests.exceptions import ConnectionError
+
 from doorkeeper.exceptions import DoorkeeperImproperlyConfigured
 from doorkeeper.service import Service
 
@@ -95,4 +97,7 @@ def main():
         Service(args.agent, args.config, cmd, args.interval)
     except DoorkeeperImproperlyConfigured as e:
         logger.error(e)
+        sys.exit(1)
+    except ConnectionError as e:
+        logger.error("Can't connect to \"{}\"".format(e.request.url))
         sys.exit(1)

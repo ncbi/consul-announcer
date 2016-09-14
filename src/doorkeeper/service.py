@@ -21,34 +21,25 @@ class Service(object):
     services = None
     ttl_checks = None
     interval = None
-    interval_ttl_multiplier = 0.1
 
     def __init__(self, agent_address, config, cmd, interval=1):
         """
         Initialize a Doorkeeper service.
 
         :param str agent_address: Agent address in a form: "hostname:port" (port is optional)
+        :param config: Config file path
         :param str cmd: Command to invoke, e.g.: "uwsgi --init=...". It should run in foreground.
         :param float interval: Polling interval in seconds.
-                               May be ``None`` so it will be auto-calculated as minimal TTL / 10.
-        :param config:
+                               May be ``None`` so it will be auto-calculated as min TTL / 10.
         """
-        self.connect(agent_address)
+        logger.info("Initializing Doorkeeper service")
+        self.consul = consul.Consul(*agent_address.split(':', 1))
         self.parse_services(config)
         self.parse_interval(interval)
         self.register_services()
         self.invoke_process(cmd)
         self.poll()
         self.deregister_services()
-
-    def connect(self, agent_address):
-        """
-        Connect to Consul HTTP API.
-
-        :param str agent_address:
-        """
-        logger.info("Connecting to Consul agent: {}".format(agent_address))
-        self.consul = consul.Consul(*agent_address.split(':', 1))
 
     def invoke_process(self, cmd):
         """
@@ -180,8 +171,10 @@ class Service(object):
 
         if min_ttl is not None:
             if interval is None:
-                self.interval = min_ttl * self.interval_ttl_multiplier
-                logger.debug("Polling interval is auto calculated as min TTL / 10")
+                self.interval = min_ttl / 10
+                logger.debug("Polling interval is auto calculated as min TTL / 10 = {} sec".format(
+                    self.interval
+                ))
             elif interval > min_ttl:
                 logger.warning(
                     "Polling interval ({} sec) is greater than min TTL ({} sec)".format(
@@ -245,7 +238,6 @@ class Service(object):
             if self.process.poll() is None:
                 self.pass_ttl_checks()
             else:
-                logger.info("Stop polling the process")
                 break
 
     def pass_ttl_checks(self):
