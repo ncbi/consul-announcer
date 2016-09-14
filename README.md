@@ -32,7 +32,7 @@ Arguments:
   -h, --help               show this help message and exit
   --agent hostname[:port]  Consul agent address: hostname[:port]. Default: localhost (default port is 8500)
   --config path            Consul checks configuration file
-  --interval seconds       Polling interval
+  --interval seconds       Interval for periodic marking all TTL checks as passed (should be less than min TTL)
   --verbose, -v            Verbose output. You can specify -v or -vv
 ```
 

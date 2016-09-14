@@ -64,7 +64,8 @@ def main():
 
     parser.add_argument(
         '--interval',
-        help="Polling interval",
+        help="Interval for periodic marking all TTL checks as passed "
+             "(should be less than min TTL)",
         metavar='seconds',
         type=float
     )
