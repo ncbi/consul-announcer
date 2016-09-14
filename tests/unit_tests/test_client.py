@@ -13,6 +13,7 @@ from doorkeeper.exceptions import DoorkeeperImproperlyConfigured
 from doorkeeper.service import Service
 
 
+# This fixture needs to be located in this file
 @pytest.fixture(autouse=True)
 def fake_service(monkeypatch):
     """
