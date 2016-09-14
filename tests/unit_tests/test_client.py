@@ -116,7 +116,14 @@ def test_client_config_argument(command, is_correct, monkeypatch, capfd):
         assert e.value.code == 2
         out, err = capfd.readouterr()
         # Client misconfiguration error message
-        assert "consul-doorkeeper: error: argument --config is required" in err
+        if sys.version < "3":
+            assert (
+                "consul-doorkeeper: error: argument --config is required" in err
+            )
+        else:
+            assert (
+                "consul-doorkeeper: error: the following arguments are required: --config" in err
+            )
 
 
 @pytest.mark.parametrize('command, is_correct', [
