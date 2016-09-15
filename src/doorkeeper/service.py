@@ -48,10 +48,12 @@ class Service(object):
         - poll it (keep it alive in Consul)
         - deregister services after subprocess is finished
         """
-        self.register_services()
-        self.invoke_process()
-        self.poll()
-        self.deregister_services()
+        try:
+            self.register_services()
+            self.invoke_process()
+            self.poll()
+        finally:
+            self.deregister_services()
 
     def parse_services(self, config):
         """

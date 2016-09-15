@@ -80,7 +80,7 @@ def main():
 
     try:
         Service(args.agent, args.config, cmd, args.interval).run()
-    except DoorkeeperImproperlyConfigured as e:
+    except (DoorkeeperImproperlyConfigured, OSError) as e:
         logger.error(e)
         sys.exit(1)
     except ConnectionError as e:
