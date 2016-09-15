@@ -293,4 +293,3 @@ class Service(object):
         if self.process and self.process.poll() is None:
             logger.info("Killing the process {} (cleanup)".format(self.process.pid))
             self.process.kill()
-

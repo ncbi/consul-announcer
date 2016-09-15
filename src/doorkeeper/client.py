@@ -80,9 +80,9 @@ def main():
 
     try:
         Service(args.agent, args.config, cmd, args.interval).run()
-    except (DoorkeeperImproperlyConfigured, OSError) as e:
-        logger.error(e)
-        sys.exit(1)
     except ConnectionError as e:
         logger.error("Can't connect to \"{}\"".format(e.request.url))
+        sys.exit(1)
+    except (DoorkeeperImproperlyConfigured, OSError) as e:
+        logger.error(e)
         sys.exit(1)
