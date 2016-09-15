@@ -1,0 +1,7 @@
+{
+    "service": {
+        "name": "Some name",
+        "notes": "When you have checks key - it must be an array",
+        "checks": {}
+    }
+}

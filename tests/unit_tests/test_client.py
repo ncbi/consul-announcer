@@ -22,6 +22,7 @@ def fake_service(monkeypatch):
     :param monkeypatch: pytest "patching" fixture
     """
     monkeypatch.setattr(Service, '__init__', lambda *args, **kwargs: None)
+    monkeypatch.setattr(Service, 'run', lambda self: None)
 
 
 @pytest.mark.parametrize('command', [
@@ -117,14 +118,10 @@ def test_client_config_argument(command, is_correct, monkeypatch, capfd):
         assert e.value.code == 2
         out, err = capfd.readouterr()
         # Client misconfiguration error message
-        if sys.version < "3":
-            assert (
-                "consul-doorkeeper: error: argument --config is required" in err
-            )
-        else:
-            assert (
-                "consul-doorkeeper: error: the following arguments are required: --config" in err
-            )
+        assert "consul-doorkeeper: error: {}".format(
+            "argument --config is required" if sys.version < "3"
+            else "the following arguments are required: --config"
+        ) in err
 
 
 @pytest.mark.parametrize('command, is_correct', [

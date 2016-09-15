@@ -16,11 +16,12 @@ logger = logging.getLogger(__name__)
 
 class Service(object):
     consul = None
-    process = None
+    cmd = None
     config = None
+    interval = None
+    process = None
     services = None
     ttl_checks = None
-    interval = None
 
     def __init__(self, agent_address, config, cmd, interval=1):
         """
@@ -28,52 +29,29 @@ class Service(object):
 
         :param str agent_address: Agent address in a form: "hostname:port" (port is optional)
         :param config: Config file path
-        :param str cmd: Command to invoke, e.g.: "uwsgi --init=...". It should run in foreground.
-        :param float interval: Polling interval in seconds.
-                               May be ``None`` so it will be auto-calculated as min TTL / 10.
+        :param list cmd: Command to invoke in , e.g.: ['uwsgi', '--ini=...']". No daemons allowed
+        :param interval: Polling interval in seconds. If None - auto-calculated as min TTL / 10
+        :type interval: float or None
         """
         logger.info("Initializing Doorkeeper service")
         self.consul = consul.Consul(*agent_address.split(':', 1))
+        self.cmd = cmd
         self.parse_services(config)
         self.parse_interval(interval)
+
+    def run(self):
+        """
+        Run the service:
+
+        - register services & checks in Consul
+        - invoke a subprocess
+        - poll it (keep it alive in Consul)
+        - deregister services after subprocess is finished
+        """
         self.register_services()
-        self.invoke_process(cmd)
+        self.invoke_process()
         self.poll()
         self.deregister_services()
-
-    def invoke_process(self, cmd):
-        """
-        Invoke the sub-process to monitor.
-
-        :param str cmd:
-        """
-        logger.info("Starting process: {}".format(cmd))
-        self.process = subprocess.Popen(cmd.split())
-        self.handle_signals()
-
-    def handle_signals(self):
-        """
-        Transparently pass all the incoming signals to the invoked process.
-        """
-        for i in dir(signal):
-            if i.startswith("SIG") and '_' not in i:
-                signum = getattr(signal, i)
-                try:
-                    signal.signal(signum, self.handle_signal)
-                except (RuntimeError, OSError, ValueError):
-                    # Some signals cannot be catched and will raise errors:
-                    # RuntimeException on SIGKILL and OSError on SIGSTOP.
-                    # No signals can be catched inside threads - ValueError will be raised.
-                    pass
-
-    def handle_signal(self, signal_number, *args):
-        """
-        OS signal listener that passes the signal to the invoked process.
-
-        :param int signal_number:
-        :param args:
-        """
-        self.process.send_signal(signal_number)
 
     def parse_services(self, config):
         """
@@ -101,15 +79,16 @@ class Service(object):
                 raise DoorkeeperImproperlyConfigured(
                     "\"services\" must be an array in {}".format(self.config)
                 )
-            for service in self.config['services']:
-                self.parse_service(service)
+
+            for service_conf in self.config['services']:
+                self.parse_service(service_conf)
 
         if not self.services:
             raise DoorkeeperImproperlyConfigured(
                 "Please specify either \"service\" config or non-empty \"services\" list"
             )
 
-    def parse_service(self, service):
+    def parse_service(self, service_conf):
         """
         Parse Consul service config.
 
@@ -120,36 +99,48 @@ class Service(object):
         - "id" should be unique
 
         Service config is stored in ``self.services``.
-        TTL checks detected and stored in ``self.ttl_checks``.
 
-        :param dict service: Service config
+        :param dict service_conf: Service config
         :raises: DoorkeeperValidationError
         """
-        if 'name' not in service:
+        if 'name' not in service_conf:
             raise DoorkeeperImproperlyConfigured(
-                "\"name\" is missing in {}".format(service)
+                "\"name\" is missing in {}".format(service_conf)
             )
 
-        service_id = service.get('id', service['name'])
+        service_id = service_conf.get('id', service_conf['name'])
 
         if service_id in self.services:
             raise DoorkeeperImproperlyConfigured(
                 "Service ID \"{}\" is duplicated".format(service_id)
             )
 
-        self.services[service_id] = service
+        self.services[service_id] = service_conf
 
-        if 'check' in service and 'ttl' in service['check']:
-            self.ttl_checks['service:{}'.format(service_id)] = service['check']
+        if 'check' in service_conf:
+            self.parse_check(service_conf['check'], 'service:{}'.format(service_id))
 
-        if 'checks' in service:
-            if not isinstance(service['checks'], list):
+        if 'checks' in service_conf:
+            if not isinstance(service_conf['checks'], list):
                 raise DoorkeeperImproperlyConfigured(
-                    "\"checks\" must be an array in {}".format(service)
+                    "\"checks\" must be an array in {}".format(service_conf)
                 )
-            for i, check in enumerate(service['checks'], 1):
-                if 'ttl' in check:
-                    self.ttl_checks['service:{}:{}'.format(service_id, i)] = check
+
+            for i, check_conf in enumerate(service_conf['checks'], 1):
+                self.parse_check(check_conf, 'service:{}:{}'.format(service_id, i))
+
+    def parse_check(self, check_conf, check_id):
+        """
+        Parse Consul check config.
+
+        No validation. TTL checks are detected & stored in ``self.ttl_checks``.
+
+        :param dict check_conf: Check config
+        :param str check_id: When check is inside service, its Name & ID are auto-generated
+                             from service Name & ID
+        """
+        if 'ttl' in check_conf:
+            self.ttl_checks[check_id] = check_conf
 
     def parse_interval(self, interval):
         """
@@ -214,16 +205,37 @@ class Service(object):
             if not success:
                 logger.warning("Service \"{}\" was not registered".format(service_id))
 
-    def deregister_services(self):
+    def invoke_process(self):
         """
-        Deregister services in Consul agent.
+        Invoke the sub-process to monitor.
         """
-        logger.info("Deregistering Consul services")
-        for service_id in self.services:
-            logger.debug("Deregistering service \"{}\"".format(service_id))
-            success = self.consul.agent.service.deregister(service_id)
-            if not success:
-                logger.warning("Service \"{}\" was not deregistered".format(service_id))
+        logger.info("Starting process: {}".format(' '.join(self.cmd)))
+        self.process = subprocess.Popen(self.cmd)
+        self.handle_signals()
+
+    def handle_signals(self):
+        """
+        Transparently pass all the incoming signals to the invoked process.
+        """
+        for i in dir(signal):
+            if i.startswith("SIG") and '_' not in i:
+                signum = getattr(signal, i)
+                try:
+                    signal.signal(signum, self.handle_signal)
+                except (RuntimeError, OSError, ValueError):
+                    # Some signals cannot be catched and will raise errors:
+                    # RuntimeException on SIGKILL and OSError on SIGSTOP.
+                    # No signals can be catched inside threads - ValueError will be raised.
+                    pass
+
+    def handle_signal(self, signal_number, *args):
+        """
+        OS signal listener that passes the signal to the invoked process.
+
+        :param int signal_number:
+        :param args:
+        """
+        self.process.send_signal(signal_number)
 
     def poll(self):
         """
@@ -247,11 +259,30 @@ class Service(object):
         if self.ttl_checks:
             statuses = []
             for check_id in self.ttl_checks:
-                success = self.consul.agent.check.ttl_pass(check_id)
+                success = self.pass_ttl_check(check_id)
                 statuses.append('\"{}\" - {}'.format(check_id, 'passed' if success else 'failed'))
             logger.debug("Updating TTL checks: {}".format(', '.join(statuses)))
         else:
             logger.debug("No TTL checks registered")
+
+    def pass_ttl_check(self, check_id):
+        """
+        Mark specified TTL check as passed.
+
+        :param str check_id:
+        """
+        return self.consul.agent.check.ttl_pass(check_id)
+
+    def deregister_services(self):
+        """
+        Deregister services in Consul agent.
+        """
+        logger.info("Deregistering Consul services")
+        for service_id in self.services:
+            logger.debug("Deregistering service \"{}\"".format(service_id))
+            success = self.consul.agent.service.deregister(service_id)
+            if not success:
+                logger.warning("Service \"{}\" was not deregistered".format(service_id))
 
     def __del__(self):
         """
@@ -260,3 +291,4 @@ class Service(object):
         if self.process and self.process.poll() is None:
             logger.info("Killing the process {} (cleanup)".format(self.process.pid))
             self.process.kill()
+

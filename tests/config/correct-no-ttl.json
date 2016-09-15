@@ -1,0 +1,9 @@
+{
+    "service": {
+        "name": "Service 1",
+        "check": {
+            "http": "https://google.com",
+            "interval": "10s"
+        }
+    }
+}

@@ -1,4 +1,4 @@
 """
-Tests against running Consul agent.
+Test ``doorkeeper.service.Service`` interaction with real Consul instance.
 """
 # TODO

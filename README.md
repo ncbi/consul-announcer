@@ -53,12 +53,20 @@ Default agent address is `localhost` (with default port `8500`). You can provide
 ```sh
 consul-doorkeeper --agent=1.2.3.4:5678 ...
 ```
-
 Output levels:
 
 * by default only errors and warnings will be printed
 * `-v` will show info messages
 * `-vv` will show info and debug messages
+
+### Python
+
+```py
+from doorkeeper.service import Service
+
+service = Service('localhost:1234', '/path/to/config.json', ['sleep', '5'], 0.5)
+service.run()
+```
 
 ## Test
 

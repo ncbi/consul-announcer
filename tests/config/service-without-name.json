@@ -1,0 +1,12 @@
+{
+    "services": [
+        {
+            "Name": "Simple service 1",
+            "Notes": "Name is required. Keys are case-insensitive"
+        },
+        {
+            "id": "service-2",
+            "notes": "Though I have ID, I don't have Name"
+        }
+    ]
+}

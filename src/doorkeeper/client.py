@@ -69,7 +69,7 @@ def main():
 
     split_at = sys.argv.index('--')
     args = parser.parse_args(sys.argv[1:split_at])
-    cmd = ' '.join(sys.argv[split_at + 1:])
+    cmd = sys.argv[split_at + 1:]
 
     if not args.verbose:
         root_logging_handler.setLevel(logging.WARNING)
@@ -79,7 +79,7 @@ def main():
         root_logging_handler.setLevel(logging.DEBUG)
 
     try:
-        Service(args.agent, args.config, cmd, args.interval)
+        Service(args.agent, args.config, cmd, args.interval).run()
     except DoorkeeperImproperlyConfigured as e:
         logger.error(e)
         sys.exit(1)
