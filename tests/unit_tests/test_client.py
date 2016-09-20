@@ -8,7 +8,8 @@ import pytest
 import requests
 from requests.exceptions import ConnectionError
 
-from announcer.client import main, root_logging_handler
+from announcer import root_logger, root_logging_handler
+from announcer.client import main
 from announcer.exceptions import AnnouncerImproperlyConfigured
 from announcer.service import Service
 
@@ -65,6 +66,7 @@ def test_client_output_verbosity(command, mode, monkeypatch, capfd):
     :param capfd: pytest fixture to capture command output
     """
     monkeypatch.setattr(sys, 'argv', command.split())
+    monkeypatch.setattr(root_logger, 'level', logging.DEBUG)
     monkeypatch.setattr(root_logging_handler, 'stream', sys.stdout)
 
     main()

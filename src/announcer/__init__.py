@@ -3,7 +3,7 @@ import logging
 
 # Setup logging
 root_logger = logging.getLogger('announcer')
-root_logger.setLevel(logging.DEBUG)
+root_logger.setLevel(logging.WARNING)
 root_logging_handler = logging.StreamHandler()
 root_logging_handler.setFormatter(
     logging.Formatter(

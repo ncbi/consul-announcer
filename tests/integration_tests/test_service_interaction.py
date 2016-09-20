@@ -2,10 +2,12 @@
 Test ``announcer.service.Service`` interaction with subprocess and Consul (faked).
 """
 import json
+import logging
 import time
 
 import responses
 
+from announcer import root_logger
 from announcer.service import Service
 
 
@@ -23,12 +25,15 @@ def test_subprocess_alive(fake_consul):
     assert service.process.poll() == 0
 
 
-def test_subprocess_polling(fake_consul, caplog):
+def test_subprocess_polling(fake_consul, caplog, monkeypatch):
     """
     Test ``announcer.service.Service`` subprocess keeping alive.
 
     :param fake_consul: custom fixture to disable calls to Consul API
+    :param caplog: ``pytest-catchlog`` fixture to catch Python logs
+    :param monkeypatch: pytest "patching" fixture
     """
+    monkeypatch.setattr(root_logger, 'level', logging.DEBUG)
     service = Service('localhost', 'tests/config/correct.json', ['sleep', '0.2'], 0.1)
     service.run()
     assert service.process.poll() == 0
@@ -46,11 +51,12 @@ def test_subprocess_cleanup(fake_consul):
 
     :param fake_consul: custom fixture to disable calls to Consul API
     """
-    service = Service('localhost', 'tests/config/correct.json', ['tail', '-f' '/dev/null'], 0.1)
+    service = Service('localhost', 'tests/config/correct.json', ['tail', '-f', '/dev/null'])
     service.poll = lambda: None
     service.run()
     service.__del__()  # this method is called by Python on garbage collection
-    assert service.process.poll() == 1  # subprocess was killed
+    time.sleep(0.5)  # we need to wait some time until the process is killed
+    assert service.process.poll() is not None  # subprocess was killed
 
 
 @responses.activate
