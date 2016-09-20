@@ -4,9 +4,9 @@ import sys
 
 from requests.exceptions import ConnectionError
 
-from doorkeeper import root_logging_handler
-from doorkeeper.exceptions import DoorkeeperImproperlyConfigured
-from doorkeeper.service import Service
+from announcer import root_logging_handler
+from announcer.exceptions import AnnouncerImproperlyConfigured
+from announcer.service import Service
 
 
 logger = logging.getLogger(__name__)
@@ -23,8 +23,8 @@ class ArgsFormatter(argparse.HelpFormatter):
 
 def main():
     parser = argparse.ArgumentParser(
-        'consul-doorkeeper',
-        description="Doorkeeper for services discovered by Consul.",
+        'consul-announcer',
+        description="Service announcer for Consul.",
         formatter_class=ArgsFormatter
     )
 
@@ -39,13 +39,13 @@ def main():
     parser.add_argument(
         '--config',
         required=True,
-        help="Consul checks configuration file",
+        help="Consul configuration file",
         metavar='path'
     )
 
     parser.add_argument(
         '--interval',
-        help="Interval for periodic marking all TTL checks as passed "
+        help="interval for periodic marking all TTL checks as passed "
              "(should be less than min TTL)",
         metavar='seconds',
         type=float
@@ -55,7 +55,7 @@ def main():
         '--verbose',
         '-v',
         action='count',
-        help="Verbose output. You can specify -v or -vv"
+        help="verbose output. You can specify -v or -vv"
     )
 
     if '--' not in sys.argv:
@@ -83,6 +83,6 @@ def main():
     except ConnectionError as e:
         logger.error("Can't connect to \"{}\"".format(e.request.url))
         sys.exit(1)
-    except (DoorkeeperImproperlyConfigured, OSError) as e:
+    except (AnnouncerImproperlyConfigured, OSError) as e:
         logger.error(e)
         sys.exit(1)

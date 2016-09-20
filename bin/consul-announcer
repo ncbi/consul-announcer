@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from doorkeeper.client import main
+from announcer.client import main
 
 
 if __name__ == '__main__':

@@ -1,12 +1,12 @@
 import pytest
 
-from doorkeeper.service import Service
+from announcer.service import Service
 
 
 @pytest.fixture
 def fake_consul(monkeypatch):
     """
-    Disable ``doorkeeper.service.Service`` calls to Consul API.
+    Disable ``announcer.service.Service`` calls to Consul API.
 
     :param monkeypatch: pytest "patching" fixture
     """
@@ -18,7 +18,7 @@ def fake_consul(monkeypatch):
 @pytest.fixture
 def fake_subprocess(monkeypatch):
     """
-    Disable ``doorkeeper.service.Service`` subprocess spawning & polling.
+    Disable ``announcer.service.Service`` subprocess spawning & polling.
 
     :param monkeypatch: pytest "patching" fixture
     """
@@ -29,7 +29,7 @@ def fake_subprocess(monkeypatch):
 @pytest.fixture
 def fake_service(fake_consul, fake_subprocess):
     """
-    Disable all external interactions of  ``doorkeeper.service.Service``.
+    Disable all external interactions of  ``announcer.service.Service``.
 
     :param fake_consul: custom fixture to disable calls to Consul API
     :param fake_subprocess: custom fixture to disable subprocess spawning

@@ -4,28 +4,15 @@
 # IDE files
 /.idea/
 
-# Project files
-/var/
-/.env
-
 # Packaging
 /.cache/
 /.eggs/
-/build/
 /dist/
-/src/*.egg-info
 /wheelhouse/
+/src/*.egg-info
 
 # Testing
 /.tox/
-
-# Python coverage
 /.coverage
 /coverage.xml
 /htmlcov/
-
-# AppLog
-/*.err
-/*.log
-/*.perf
-/*.trace

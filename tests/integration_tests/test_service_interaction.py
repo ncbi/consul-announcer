@@ -1,17 +1,17 @@
 """
-Test ``doorkeeper.service.Service`` interaction with subprocess and Consul (faked).
+Test ``announcer.service.Service`` interaction with subprocess and Consul (faked).
 """
 import json
 import time
 
 import responses
 
-from doorkeeper.service import Service
+from announcer.service import Service
 
 
 def test_subprocess_alive(fake_consul):
     """
-    Test ``doorkeeper.service.Service`` subprocess spawning.
+    Test ``announcer.service.Service`` subprocess spawning.
 
     :param fake_consul: custom fixture to disable calls to Consul API
     """
@@ -25,7 +25,7 @@ def test_subprocess_alive(fake_consul):
 
 def test_subprocess_polling(fake_consul, caplog):
     """
-    Test ``doorkeeper.service.Service`` subprocess keeping alive.
+    Test ``announcer.service.Service`` subprocess keeping alive.
 
     :param fake_consul: custom fixture to disable calls to Consul API
     """
@@ -42,7 +42,7 @@ def test_subprocess_polling(fake_consul, caplog):
 
 def test_subprocess_cleanup(fake_consul):
     """
-    Test ``doorkeeper.service.Service`` subprocess termination when Python process has exited.
+    Test ``announcer.service.Service`` subprocess termination when Python process has exited.
 
     :param fake_consul: custom fixture to disable calls to Consul API
     """
@@ -56,7 +56,7 @@ def test_subprocess_cleanup(fake_consul):
 @responses.activate
 def test_consul_interaction():
     """
-    Test ``doorkeeper.service.Service`` interaction with Consul.
+    Test ``announcer.service.Service`` interaction with Consul.
     """
     api_url = 'http://localhost:1234/v1/agent/{}'
 

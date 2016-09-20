@@ -1,15 +1,15 @@
 # encoding: utf-8
 """
-Test ``doorkeeper.utils``.
+Test ``announcer.utils``.
 """
 from datetime import timedelta
 
-from doorkeeper.utils import parse_duration
+from announcer.utils import parse_duration
 
 
 def test_parse_duration():
     """
-    Test ``doorkeeper.utils.parse_duration`` utility function
+    Test ``announcer.utils.parse_duration`` utility function
     that parses Go duration string into ``datetime.timedelta``.
     """
     # Bad formatting = 0

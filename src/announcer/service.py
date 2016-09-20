@@ -8,8 +8,8 @@ import consul
 from consul.base import CB
 from requests.structures import CaseInsensitiveDict
 
-from doorkeeper.exceptions import DoorkeeperImproperlyConfigured
-from doorkeeper.utils import parse_duration
+from announcer.exceptions import AnnouncerImproperlyConfigured
+from announcer.utils import parse_duration
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class Service(object):
 
     def __init__(self, agent_address, config, cmd, interval=1):
         """
-        Initialize a Doorkeeper service.
+        Initialize consul-announcer service.
 
         :param str agent_address: Agent address in a form: "hostname:port" (port is optional)
         :param config: Config file path
@@ -33,7 +33,7 @@ class Service(object):
         :param interval: Polling interval in seconds. If None - auto-calculated as min TTL / 10
         :type interval: float or None
         """
-        logger.info("Initializing Doorkeeper service")
+        logger.info("Initializing service")
         self.consul = consul.Consul(*agent_address.split(':', 1))
         self.cmd = cmd
         self.parse_services(config)
@@ -63,7 +63,7 @@ class Service(object):
         and https://www.consul.io/docs/agent/checks.html.
 
         :param str config: Config file path
-        :raises: DoorkeeperValidationError
+        :raises: AnnouncerValidationError
         """
         logger.info("Parsing services definition in \"{}\" config file".format(config))
 
@@ -78,7 +78,7 @@ class Service(object):
 
         if 'services' in self.config:
             if not isinstance(self.config['services'], list):
-                raise DoorkeeperImproperlyConfigured(
+                raise AnnouncerImproperlyConfigured(
                     "\"services\" must be an array in {}".format(self.config)
                 )
 
@@ -86,7 +86,7 @@ class Service(object):
                 self.parse_service(service_conf)
 
         if not self.services:
-            raise DoorkeeperImproperlyConfigured(
+            raise AnnouncerImproperlyConfigured(
                 "Please specify either \"service\" config or non-empty \"services\" list"
             )
 
@@ -103,17 +103,17 @@ class Service(object):
         Service config is stored in ``self.services``.
 
         :param dict service_conf: Service config
-        :raises: DoorkeeperValidationError
+        :raises: AnnouncerValidationError
         """
         if 'name' not in service_conf:
-            raise DoorkeeperImproperlyConfigured(
+            raise AnnouncerImproperlyConfigured(
                 "\"name\" is missing in {}".format(service_conf)
             )
 
         service_id = service_conf.get('id', service_conf['name'])
 
         if service_id in self.services:
-            raise DoorkeeperImproperlyConfigured(
+            raise AnnouncerImproperlyConfigured(
                 "Service ID \"{}\" is duplicated".format(service_id)
             )
 
@@ -124,7 +124,7 @@ class Service(object):
 
         if 'checks' in service_conf:
             if not isinstance(service_conf['checks'], list):
-                raise DoorkeeperImproperlyConfigured(
+                raise AnnouncerImproperlyConfigured(
                     "\"checks\" must be an array in {}".format(service_conf)
                 )
 
@@ -152,7 +152,7 @@ class Service(object):
         - If it's not ``None`` and it's greater than min TTL - log a warning
 
         :param float interval:
-        :raises: DoorkeeperValidationError
+        :raises: AnnouncerValidationError
         """
         logger.info("Processing the polling interval")
 
@@ -175,7 +175,7 @@ class Service(object):
                     )
                 )
         elif interval is None:
-            raise DoorkeeperImproperlyConfigured("Polling interval is undefined")
+            raise AnnouncerImproperlyConfigured("Polling interval is undefined")
 
     def get_min_ttl(self):
         """

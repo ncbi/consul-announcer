@@ -1,5 +1,5 @@
 """
-Test ``doorkeeper.client`` (CLI).
+Test ``announcer.client`` (CLI).
 """
 import logging
 import sys
@@ -8,16 +8,16 @@ import pytest
 import requests
 from requests.exceptions import ConnectionError
 
-from doorkeeper.client import main, root_logging_handler
-from doorkeeper.exceptions import DoorkeeperImproperlyConfigured
-from doorkeeper.service import Service
+from announcer.client import main, root_logging_handler
+from announcer.exceptions import AnnouncerImproperlyConfigured
+from announcer.service import Service
 
 
 # This fixture needs to be located in this file
 @pytest.fixture(autouse=True)
 def fake_service(monkeypatch):
     """
-    Disable all ``doorkeeper.service.Service`` logic.
+    Disable all ``announcer.service.Service`` logic.
 
     :param monkeypatch: pytest "patching" fixture
     """
@@ -26,9 +26,9 @@ def fake_service(monkeypatch):
 
 
 @pytest.mark.parametrize('command', [
-    'consul-doorkeeper',
-    'consul-doorkeeper --something --wrong -h',
-    'consul-doorkeeper --something --wrong --help'
+    'consul-announcer',
+    'consul-announcer --something --wrong -h',
+    'consul-announcer --something --wrong --help'
 ], ids=['none', 'short', 'long'])
 def test_client_help_message(command, monkeypatch, capfd):
     """
@@ -45,15 +45,15 @@ def test_client_help_message(command, monkeypatch, capfd):
     assert not e.value.code
     out, err = capfd.readouterr()
     # Check that help message was printed
-    assert "Doorkeeper for services discovered by Consul." in out
+    assert "Service announcer for Consul." in out
 
 
 @pytest.mark.parametrize('command, mode', [
-    ['consul-doorkeeper --config=... -- ...', 'WEC'],
-    ['consul-doorkeeper --config=... -v -- ...', 'IWEC'],
-    ['consul-doorkeeper --config=... --verbose -- ...', 'IWEC'],
-    ['consul-doorkeeper --config=... -vv -- ...', 'DIWEC'],
-    ['consul-doorkeeper --config=... --verbose --verbose -- ...', 'DIWEC']
+    ['consul-announcer --config=... -- ...', 'WEC'],
+    ['consul-announcer --config=... -v -- ...', 'IWEC'],
+    ['consul-announcer --config=... --verbose -- ...', 'IWEC'],
+    ['consul-announcer --config=... -vv -- ...', 'DIWEC'],
+    ['consul-announcer --config=... --verbose --verbose -- ...', 'DIWEC']
 ], ids=['none', 'lvl-1-short', 'lvl-1-long', 'lvl-2-short', 'lvl-2-long'])
 def test_client_output_verbosity(command, mode, monkeypatch, capfd):
     """
@@ -77,8 +77,8 @@ def test_client_output_verbosity(command, mode, monkeypatch, capfd):
         'C': "Test critical message"
     }
 
-    # Any 'doorkeeper.*' logger will use ``root_logging_handler``
-    logger = logging.getLogger('doorkeeper.tests')
+    # Any 'announcer.*' logger will use ``root_logging_handler``
+    logger = logging.getLogger('announcer.tests')
     logger.debug(msg['D'])
     logger.info(msg['I'])
     logger.warning(msg['W'])
@@ -94,8 +94,8 @@ def test_client_output_verbosity(command, mode, monkeypatch, capfd):
 
 
 @pytest.mark.parametrize('command, is_correct', [
-    ['consul-doorkeeper -- ...', False],
-    ['consul-doorkeeper --config=... -- ...', True]
+    ['consul-announcer -- ...', False],
+    ['consul-announcer --config=... -- ...', True]
 ], ids=['wrong', 'correct'])
 def test_client_config_argument(command, is_correct, monkeypatch, capfd):
     """
@@ -118,15 +118,15 @@ def test_client_config_argument(command, is_correct, monkeypatch, capfd):
         assert e.value.code == 2
         out, err = capfd.readouterr()
         # Client misconfiguration error message
-        assert "consul-doorkeeper: error: {}".format(
+        assert "consul-announcer: error: {}".format(
             "argument --config is required" if sys.version < "3"
             else "the following arguments are required: --config"
         ) in err
 
 
 @pytest.mark.parametrize('command, is_correct', [
-    ['consul-doorkeeper --config=...', False],
-    ['consul-doorkeeper --config=... -- ...', True]
+    ['consul-announcer --config=...', False],
+    ['consul-announcer --config=... -- ...', True]
 ], ids=['wrong', 'correct'])
 def test_client_command_argument(command, is_correct, monkeypatch, capfd):
     """
@@ -149,18 +149,18 @@ def test_client_command_argument(command, is_correct, monkeypatch, capfd):
         assert e.value.code == 2
         out, err = capfd.readouterr()
         # Client misconfiguration error message
-        assert "consul-doorkeeper: error: command is not specified" in err
+        assert "consul-announcer: error: command is not specified" in err
 
 
 @pytest.mark.parametrize('exception', [
-    DoorkeeperImproperlyConfigured("Fake test error"),
+    AnnouncerImproperlyConfigured("Fake test error"),
     ConnectionError(request=requests.Request(url='http://fake.example.com'))
 ], ids=['service', 'connection'])
 def test_client_error(exception, monkeypatch, capfd):
     def fake_service_init(*args, **kwargs):
         raise exception
 
-    monkeypatch.setattr(sys, 'argv', 'consul-doorkeeper --config=... -- ...'.split())
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer --config=... -- ...'.split())
     monkeypatch.setattr(root_logging_handler, 'stream', sys.stdout)
     monkeypatch.setattr(Service, '__init__', fake_service_init)
 
@@ -175,4 +175,4 @@ def test_client_error(exception, monkeypatch, capfd):
         error_message = "Can't connect to \"{}\"".format(exception.request.url)
     else:
         error_message = str(exception)
-    assert "ERROR - doorkeeper.client: {}".format(error_message) in out
+    assert "ERROR - announcer.client: {}".format(error_message) in out

@@ -1,10 +1,10 @@
 """
-Test ``doorkeeper.service.Service`` (without CLI).
+Test ``announcer.service.Service`` (without CLI).
 """
 import pytest
 
-from doorkeeper.exceptions import DoorkeeperImproperlyConfigured
-from doorkeeper.service import Service
+from announcer.exceptions import AnnouncerImproperlyConfigured
+from announcer.service import Service
 
 
 @pytest.mark.parametrize('conf_path', [
@@ -24,15 +24,15 @@ from doorkeeper.service import Service
 ])
 def test_services_config_parsing_errors(conf_path):
     """
-    Test ``doorkeeper.service.Service`` initialization - Consul config parsing errors.
+    Test ``announcer.service.Service`` initialization - Consul config parsing errors.
     """
-    with pytest.raises(DoorkeeperImproperlyConfigured):
+    with pytest.raises(AnnouncerImproperlyConfigured):
         Service('localhost', conf_path, ['...'])
 
 
 def test_services_config_parsing_success(fake_service):
     """
-    Test ``doorkeeper.service.Service`` initialization - Consul config parsing success.
+    Test ``announcer.service.Service`` initialization - Consul config parsing success.
 
     :param fake_service: custom fixture to disable calls to Consul API and  subprocess spawning
     """
@@ -43,7 +43,7 @@ def test_services_config_parsing_success(fake_service):
 
 def test_interval_parsing(fake_service, caplog):
     """
-    Test ``doorkeeper.service.Service`` initialization - interval parsing.
+    Test ``announcer.service.Service`` initialization - interval parsing.
     """
     # Interval is provided
     assert Service('localhost', 'tests/config/correct.json', ['...'], 3).interval == 3
@@ -55,7 +55,7 @@ def test_interval_parsing(fake_service, caplog):
     assert Service('localhost', 'tests/config/correct.json', ['...'], None).interval == 1.5
 
     # No TTL specified
-    with pytest.raises(DoorkeeperImproperlyConfigured):
+    with pytest.raises(AnnouncerImproperlyConfigured):
         Service('localhost', 'tests/config/correct-no-ttl.json', ['...'], None)
 
     Service('localhost', 'tests/config/correct.json', ['...'], 20.0)
