@@ -1,0 +1,35 @@
+{
+    "service": {
+        "name": "Service 1",
+        "check": {
+            "name": "External URL check",
+            "id": "external-url",
+            "notes": "Check name & ID are ignored and auto-generated from service name & ID",
+            "HTTP": "https://google.com",
+            "interval": "10s",
+            "timeout": "1s"
+        }
+    },
+    "services": [
+        {
+            "Name": "Service 1",
+            "ID": "service-1.1",
+            "Notes": "Though name is duplicated, ID is unique"
+        },
+        {
+            "NamE": "Service 2",
+            "Id": "service-2",
+            "NoTeS": "Config keys are case-insensitive",
+            "CheckS": [
+                {
+                    "Script": "/bin/bash -c 'true'",
+                    "Interval": "15s"
+                },
+                {
+                    "HTTP": "http://bad.example.com",
+                    "TTL": "15s"
+                }
+            ]
+        }
+    ]
+}

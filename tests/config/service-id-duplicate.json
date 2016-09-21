@@ -1,0 +1,12 @@
+{
+    "services": [
+        {
+            "name": "Service 1",
+            "notes": "Name is used as ID, if the latter is not provided"
+        },
+        {
+            "ID": "Service 1",
+            "Name": "Some name"
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+# Python compiled sources
+*.pyc
+
+# IDE files
+/.idea/
+
+# Packaging
+/.cache/
+/.eggs/
+/dist/
+/wheelhouse/
+/src/*.egg-info
+
+# Testing
+/.tox/
+/.coverage
+/coverage.xml
+/htmlcov/
