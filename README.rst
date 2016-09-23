@@ -50,7 +50,7 @@ All the services & checks will be registered on process start and deregistered o
 ``--interval``
 ~~~~~~~~~~~~~~
 
-In the example above, the interval is not specified so it’ll be calculated as min TTL / 10 (if there are TTL checks specified in the config file). But you can provide your own value *(in seconds)*:
+In the example above, the interval is not specified so it'll be calculated as min TTL / 10 (if there are TTL checks specified in the config file). But you can provide your own value *(in seconds)*:
 
 .. code:: sh
 
@@ -117,7 +117,7 @@ Release
 ~~~~~~~
 
 - Tests must be passing
-- Don’t forget to test all added functionality
+- Don't forget to test all added functionality
 - Update ``CHANGELOG`` with the release info
 - Update ``README`` *(if necessary)*
 - Commit all the changes
