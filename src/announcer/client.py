@@ -33,7 +33,8 @@ def main():
         '--agent',
         default=os.getenv('CONSUL_ANNOUNCER_ADDRESS', 'localhost'),
         help="Consul agent address: hostname[:port]. "
-             "Default: localhost (default port is 8500)",
+             "Default: localhost (default port is 8500). "
+             "You can also use CONSUL_ANNOUNCER_ADDRESS env variable.",
         metavar='hostname[:port]'
     )
 
@@ -41,20 +42,25 @@ def main():
         '--config',
         required='CONSUL_ANNOUNCER_CONFIG' not in os.environ,
         default=os.getenv('CONSUL_ANNOUNCER_CONFIG'),
-        help="Consul configuration file",
+        help="Consul configuration file (required)."
+             "You can also use CONSUL_ANNOUNCER_CONFIG env variable.",
         metavar='path'
     )
 
     parser.add_argument(
         '--token',
-        help="Consul ACL token"
+        default=os.getenv('CONSUL_ANNOUNCER_TOKEN'),
+        help="Consul ACL token."
+             "You can also use CONSUL_ANNOUNCER_TOKEN env variable.",
+        metavar='acl-token'
     )
 
     parser.add_argument(
         '--interval',
         default=os.getenv('CONSUL_ANNOUNCER_INTERVAL'),
         help="interval for periodic marking all TTL checks as passed "
-             "(should be less than min TTL)",
+             "(should be less than min TTL)."
+             "You can also use CONSUL_ANNOUNCER_INTERVAL env variable.",
         metavar='seconds',
         type=float
     )
