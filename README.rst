@@ -87,6 +87,10 @@ You can also use ``CONSUL_ANNOUNCER_AGENT`` env variable.
 
 Consul ACL token. Required only in you've enabled ACL in your Consul agent.
 
+.. code:: sh
+
+    consul-announcer --token=01234567-89ab-cdef-0123-456789abcdef ...
+
 You can also use ``CONSUL_ANNOUNCER_TOKEN`` env variable.
 
 ``--verbose``
@@ -105,7 +109,7 @@ Usage in Python code
 
     from announcer.service import Service
 
-    service = Service('localhost:1234', '@/path/to/config.json', ['sleep', '5'], 0.5)
+    service = Service('localhost:1234', '@/path/to/config.json', ['sleep', '5'], '01234567-89ab-cdef-0123-456789abcdef', 0.5)
     service.run()
 
 Development
