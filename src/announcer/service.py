@@ -23,18 +23,20 @@ class Service(object):
     services = None
     ttl_checks = None
 
-    def __init__(self, agent_address, config, cmd, interval=1):
+    def __init__(self, agent_address, config, cmd, token=None, interval=1):
         """
         Initialize consul-announcer service.
 
-        :param str agent_address: Agent address in a form: "hostname:port" (port is optional)
-        :param config: Config file path
-        :param list cmd: Command to invoke in , e.g.: ['uwsgi', '--ini=...']". No daemons allowed
-        :param interval: Polling interval in seconds. If None - auto-calculated as min TTL / 10
+        :param str agent_address: Agent address in a form: "hostname:port" (port is optional).
+        :param config: Consul configuration JSON. If starts with @ - considered as file path.
+        :param list cmd: Command to invoke in , e.g.: ['uwsgi', '--ini=...']". No daemons allowed.
+        :param token: Consul ACL token.
+        :type token: str or None
+        :param interval: Polling interval in seconds. If None - auto-calculated as min TTL / 10.
         :type interval: float or None
         """
         logger.info("Initializing service")
-        self.consul = consul.Consul(*agent_address.split(':', 1))
+        self.consul = consul.Consul(*agent_address.split(':', 1), token=token)
         self.cmd = cmd
         self.parse_services(config)
         self.parse_interval(interval)
@@ -62,16 +64,19 @@ class Service(object):
         See https://www.consul.io/docs/agent/services.html
         and https://www.consul.io/docs/agent/checks.html.
 
-        :param str config: Config file path
+        :param str config: Consul configuration JSON. If starts with @ - considered as file path.
         :raises: AnnouncerValidationError
         """
-        logger.info("Parsing services definition in \"{}\" config file".format(config))
-
         self.services = {}
         self.ttl_checks = {}
 
-        with open(config) as f:
-            self.config = json.load(f, object_hook=CaseInsensitiveDict)
+        if config[0] == '@':
+            logger.info("Parsing services definition in \"{}\" config file".format(config[1:]))
+            with open(config[1:]) as f:
+                self.config = json.load(f, object_hook=CaseInsensitiveDict)
+        else:
+            logger.info("Parsing services definition: {}".format(config))
+            self.config = json.loads(config, object_hook=CaseInsensitiveDict)
 
         if 'service' in self.config:
             self.parse_service(self.config['service'])
@@ -202,6 +207,7 @@ class Service(object):
             success = self.consul.http.put(
                 CB.bool(),
                 '/v1/agent/service/register',
+                params={'token': self.consul.token},
                 data=json.dumps(service_conf, default=dict)
             )
             if not success:

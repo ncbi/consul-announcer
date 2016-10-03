@@ -4,6 +4,8 @@ Test ``announcer.utils``.
 """
 from datetime import timedelta
 
+import pytest
+
 from announcer.utils import parse_duration
 
 
@@ -12,8 +14,12 @@ def test_parse_duration():
     Test ``announcer.utils.parse_duration`` utility function
     that parses Go duration string into ``datetime.timedelta``.
     """
-    # Bad formatting = 0
-    assert parse_duration('nothing') == timedelta(0)
+    # Bad formatting -> ValueError
+    with pytest.raises(ValueError):
+        assert parse_duration('nothing')
+    # Wrong input type -> ValueError
+    with pytest.raises(ValueError):
+        assert parse_duration(8)
     # Partially bad formatting is OK
     assert parse_duration('10sec and 25min') == timedelta(minutes=25, seconds=10)
     # Hours

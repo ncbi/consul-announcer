@@ -2,6 +2,8 @@
 import re
 import datetime
 
+import six
+
 
 # duration units, converted to microseconds
 duration_units = {
@@ -19,10 +21,17 @@ def parse_duration(s):
     """
     Parse a Go duration string into ``datetime.timedelta``.
     See https://golang.org/pkg/time/#ParseDuration.
+
+    :param str s:
     """
     pattern = re.compile(u'(\d+(?:\.\d*)?)([numµ]?s|[mh])')
+    if not isinstance(s, six.string_types):
+        raise ValueError("Duration must be a string: {}".format(s))
+    bits = pattern.findall(s)
+    if not bits:
+        raise ValueError("Duration is not parsed: {}".format(s))
     total_microseconds = 0
     sign = -1 if s[0] == '-' else 1
-    for (value, unit) in pattern.findall(s):
+    for (value, unit) in bits:
         total_microseconds += float(value) * duration_units[unit]
     return datetime.timedelta(microseconds=sign * total_microseconds)
