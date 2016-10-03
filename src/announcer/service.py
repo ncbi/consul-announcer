@@ -30,7 +30,8 @@ class Service(object):
         :param str agent_address: Agent address in a form: "hostname:port" (port is optional)
         :param config: Config file path
         :param list cmd: Command to invoke in , e.g.: ['uwsgi', '--ini=...']". No daemons allowed
-        :param str token: Consul ACL token
+        :param token: Consul ACL token
+        :type token: str or None
         :param interval: Polling interval in seconds. If None - auto-calculated as min TTL / 10
         :type interval: float or None
         """

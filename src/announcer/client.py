@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import sys
 
 from requests.exceptions import ConnectionError
@@ -30,7 +31,7 @@ def main():
 
     parser.add_argument(
         '--agent',
-        default='localhost',
+        default=os.getenv('CONSUL_ANNOUNCER_ADDRESS', 'localhost'),
         help="Consul agent address: hostname[:port]. "
              "Default: localhost (default port is 8500)",
         metavar='hostname[:port]'
@@ -38,7 +39,8 @@ def main():
 
     parser.add_argument(
         '--config',
-        required=True,
+        required='CONSUL_ANNOUNCER_CONFIG' not in os.environ,
+        default=os.getenv('CONSUL_ANNOUNCER_CONFIG'),
         help="Consul configuration file",
         metavar='path'
     )
@@ -50,6 +52,7 @@ def main():
 
     parser.add_argument(
         '--interval',
+        default=os.getenv('CONSUL_ANNOUNCER_INTERVAL'),
         help="interval for periodic marking all TTL checks as passed "
              "(should be less than min TTL)",
         metavar='seconds',

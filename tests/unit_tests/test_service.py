@@ -46,19 +46,19 @@ def test_interval_parsing(fake_service, caplog):
     Test ``announcer.service.Service`` initialization - interval parsing.
     """
     # Interval is provided
-    assert Service('localhost', 'tests/config/correct.json', ['...'], 3).interval == 3
+    assert Service('localhost', 'tests/config/correct.json', ['...'], None, 3).interval == 3
 
     # Default interval is 1 sec
     assert Service('localhost', 'tests/config/correct.json', ['...']).interval == 1
 
     # Interval is auto-calculated as min TTL / 10
-    assert Service('localhost', 'tests/config/correct.json', ['...'], None).interval == 1.5
+    assert Service('localhost', 'tests/config/correct.json', ['...'], None, None).interval == 1.5
 
     # No TTL specified
     with pytest.raises(AnnouncerImproperlyConfigured):
-        Service('localhost', 'tests/config/correct-no-ttl.json', ['...'], None)
+        Service('localhost', 'tests/config/correct-no-ttl.json', ['...'], None, None)
 
-    Service('localhost', 'tests/config/correct.json', ['...'], 20.0)
+    Service('localhost', 'tests/config/correct.json', ['...'], None, 20.0)
     log_record = caplog.records[-1]
     assert log_record.levelname == 'WARNING'
     assert log_record.message == 'Polling interval (20.0 sec) is greater than min TTL (15.0 sec)'
