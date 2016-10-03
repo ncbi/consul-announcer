@@ -37,6 +37,7 @@ def test_services_config_parsing_errors(conf):
         with pytest.raises(ValueError):
             Service('localhost', conf, ['...'])
 
+
 def test_services_config_parsing_success(fake_service):
     """
     Test ``announcer.service.Service`` initialization - Consul config parsing success.
