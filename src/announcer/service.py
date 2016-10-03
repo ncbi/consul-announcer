@@ -23,18 +23,19 @@ class Service(object):
     services = None
     ttl_checks = None
 
-    def __init__(self, agent_address, config, cmd, interval=1):
+    def __init__(self, agent_address, config, cmd, token=None, interval=1):
         """
         Initialize consul-announcer service.
 
         :param str agent_address: Agent address in a form: "hostname:port" (port is optional)
         :param config: Config file path
         :param list cmd: Command to invoke in , e.g.: ['uwsgi', '--ini=...']". No daemons allowed
+        :param str token: Consul ACL token
         :param interval: Polling interval in seconds. If None - auto-calculated as min TTL / 10
         :type interval: float or None
         """
         logger.info("Initializing service")
-        self.consul = consul.Consul(*agent_address.split(':', 1))
+        self.consul = consul.Consul(*agent_address.split(':', 1), token=token)
         self.cmd = cmd
         self.parse_services(config)
         self.parse_interval(interval)
@@ -202,6 +203,7 @@ class Service(object):
             success = self.consul.http.put(
                 CB.bool(),
                 '/v1/agent/service/register',
+                params={'token': self.consul.token},
                 data=json.dumps(service_conf, default=dict)
             )
             if not success:

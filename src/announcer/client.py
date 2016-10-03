@@ -4,7 +4,7 @@ import sys
 
 from requests.exceptions import ConnectionError
 
-from announcer import root_logging_handler
+from announcer import root_logger
 from announcer.exceptions import AnnouncerImproperlyConfigured
 from announcer.service import Service
 
@@ -44,6 +44,11 @@ def main():
     )
 
     parser.add_argument(
+        '--token',
+        help="Consul ACL token"
+    )
+
+    parser.add_argument(
         '--interval',
         help="interval for periodic marking all TTL checks as passed "
              "(should be less than min TTL)",
@@ -72,14 +77,20 @@ def main():
     cmd = sys.argv[split_at + 1:]
 
     if not args.verbose:
-        root_logging_handler.setLevel(logging.WARNING)
+        root_logger.setLevel(logging.WARNING)
     elif args.verbose == 1:
-        root_logging_handler.setLevel(logging.INFO)
+        root_logger.setLevel(logging.INFO)
     elif args.verbose >= 2:
-        root_logging_handler.setLevel(logging.DEBUG)
+        root_logger.setLevel(logging.DEBUG)
 
     try:
-        Service(args.agent, args.config, cmd, args.interval).run()
+        Service(
+            agent_address=args.agent,
+            config=args.config,
+            cmd=cmd,
+            token=args.token,
+            interval=args.interval
+        ).run()
     except ConnectionError as e:
         logger.error("Can't connect to \"{}\"".format(e.request.url))
         sys.exit(1)
