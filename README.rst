@@ -45,12 +45,22 @@ Minimal usage:
 
 .. code:: sh
 
-    consul-announcer --config=conf.json -- some-process --with --arguments
+    consul-announcer --config=@path/to/config.json -- some-process --with --arguments
 
 ``--config``
 ~~~~~~~~~~~~
 
-It should be valid JSON that contains ``{"service": {...}}`` or ``{"services": [...]}``. If starts with ``@`` - considered as file path.
+It should be valid JSON that contains ``{"service": {...}}`` or ``{"services": [...]}``:
+
+.. code:: sh
+
+    consul-announcer --config='{"service": {"name": "test service", "check": {"ttl": "10s"}}}' -- ...
+
+If starts with ``@`` - considered as file path:
+
+.. code:: sh
+
+    consul-announcer --config=@path/to/config.json -- ...
 
 Read `Consul docs about services definition`_.
 
