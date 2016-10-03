@@ -1,10 +1,11 @@
 import argparse
 import logging
+import os
 import sys
 
 from requests.exceptions import ConnectionError
 
-from announcer import root_logging_handler
+from announcer import root_logger
 from announcer.exceptions import AnnouncerImproperlyConfigured
 from announcer.service import Service
 
@@ -30,23 +31,37 @@ def main():
 
     parser.add_argument(
         '--agent',
-        default='localhost',
+        default=os.getenv('CONSUL_ANNOUNCER_AGENT', 'localhost'),
         help="Consul agent address: hostname[:port]. "
-             "Default: localhost (default port is 8500)",
+             "Default: localhost (default port is 8500). "
+             "You can also use CONSUL_ANNOUNCER_AGENT env variable.",
         metavar='hostname[:port]'
     )
 
     parser.add_argument(
         '--config',
-        required=True,
-        help="Consul configuration file",
-        metavar='path'
+        required='CONSUL_ANNOUNCER_CONFIG' not in os.environ,
+        default=os.getenv('CONSUL_ANNOUNCER_CONFIG'),
+        help="Consul configuration JSON (required). "
+             "If starts with @ - considered as file path. "
+             "You can also use CONSUL_ANNOUNCER_CONFIG env variable.",
+        metavar='"JSON or @path"'
+    )
+
+    parser.add_argument(
+        '--token',
+        default=os.getenv('CONSUL_ANNOUNCER_TOKEN'),
+        help="Consul ACL token. "
+             "You can also use CONSUL_ANNOUNCER_TOKEN env variable.",
+        metavar='acl-token'
     )
 
     parser.add_argument(
         '--interval',
-        help="interval for periodic marking all TTL checks as passed "
-             "(should be less than min TTL)",
+        default=os.getenv('CONSUL_ANNOUNCER_INTERVAL'),
+        help="interval for periodic marking all TTL checks as passed, in seconds. "
+             "Should be less than min TTL. "
+             "You can also use CONSUL_ANNOUNCER_INTERVAL env variable.",
         metavar='seconds',
         type=float
     )
@@ -72,17 +87,23 @@ def main():
     cmd = sys.argv[split_at + 1:]
 
     if not args.verbose:
-        root_logging_handler.setLevel(logging.WARNING)
+        root_logger.setLevel(logging.WARNING)
     elif args.verbose == 1:
-        root_logging_handler.setLevel(logging.INFO)
+        root_logger.setLevel(logging.INFO)
     elif args.verbose >= 2:
-        root_logging_handler.setLevel(logging.DEBUG)
+        root_logger.setLevel(logging.DEBUG)
 
     try:
-        Service(args.agent, args.config, cmd, args.interval).run()
+        Service(
+            agent_address=args.agent,
+            config=args.config,
+            cmd=cmd,
+            token=args.token,
+            interval=args.interval
+        ).run()
     except ConnectionError as e:
         logger.error("Can't connect to \"{}\"".format(e.request.url))
         sys.exit(1)
-    except (AnnouncerImproperlyConfigured, OSError) as e:
+    except (AnnouncerImproperlyConfigured, OSError, ValueError) as e:
         logger.error(e)
         sys.exit(1)

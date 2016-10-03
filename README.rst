@@ -23,14 +23,23 @@ Usage
 
 .. code:: sh
 
-    consul-announcer --config=path [-h] [--agent=hostname[:port]] [--interval=seconds] [--verbose] -- command [arguments]
+    consul-announcer --config="JSON or @path" [-h] [--agent=hostname[:port]] [--token=acl-token] [--interval=seconds] [--verbose] -- command [arguments]
 
     Arguments:
-      -h, --help               show this help message and exit
-      --agent hostname[:port]  Consul agent address: hostname[:port]. Default: localhost (default port is 8500)
-      --config path            Consul checks configuration file
-      --interval seconds       interval for periodic marking all TTL checks as passed (should be less than min TTL)
-      --verbose, -v            verbose output. You can specify -v or -vv
+
+        -h, --help                Show this help message and exit.
+        --agent hostname[:port]   Consul agent address: hostname[:port].
+                                  Default: localhost (default port is 8500).
+                                  You can also use CONSUL_ANNOUNCER_AGENT env variable.
+        --config "JSON or @path"  Consul configuration JSON (required).
+                                  If starts with @ - considered as file path.
+                                  You can also use CONSUL_ANNOUNCER_CONFIG env variable.
+        --token acl-token         Consul ACL token.
+                                  You can also use CONSUL_ANNOUNCER_TOKEN env variable.
+        --interval seconds        Interval for periodic marking all TTL checks as passed, in seconds.
+                                  Should be less than min TTL.
+                                  You can also use CONSUL_ANNOUNCER_INTERVAL env variable.
+        --verbose, -v             Verbose output. You can specify -v or -vv.
 
 Minimal usage:
 
@@ -41,22 +50,26 @@ Minimal usage:
 ``--config``
 ~~~~~~~~~~~~
 
-It should be a JSON file that contains ``{"service": {...}}`` or ``{"services": [...]}``.
+It should be valid JSON that contains ``{"service": {...}}`` or ``{"services": [...]}``. If starts with ``@`` - considered as file path.
 
 Read `Consul docs about services definition`_.
 
 All the services & checks will be registered on process start and deregistered on process termination.
 
+You can also use ``CONSUL_ANNOUNCER_CONFIG`` env variable.
+
 ``--interval``
 ~~~~~~~~~~~~~~
 
-In the example above, the interval is not specified so it'll be calculated as min TTL / 10 (if there are TTL checks specified in the config file). But you can provide your own value *(in seconds)*:
+In the example above, the interval is not specified so it'll be calculated as min TTL / 10 (if there are TTL checks specified in the config). But you can provide your own value *(in seconds)*:
 
 .. code:: sh
 
     consul-announcer --interval=3 ...
 
 If there are no TTL checks and no ``--interval`` - an error will raise.
+
+You can also use ``CONSUL_ANNOUNCER_INTERVAL`` env variable.
 
 ``--address``
 ~~~~~~~~~~~~~
@@ -66,6 +79,15 @@ Default agent address is ``localhost`` (with default port ``8500``). You can pro
 .. code:: sh
 
     consul-announcer --agent=1.2.3.4:5678 ...
+
+You can also use ``CONSUL_ANNOUNCER_AGENT`` env variable.
+
+``--token``
+~~~~~~~~~~~
+
+Consul ACL token. Required only in you've enabled ACL in your Consul agent.
+
+You can also use ``CONSUL_ANNOUNCER_TOKEN`` env variable.
 
 ``--verbose``
 ~~~~~~~~~~~~~
@@ -83,7 +105,7 @@ Usage in Python code
 
     from announcer.service import Service
 
-    service = Service('localhost:1234', '/path/to/config.json', ['sleep', '5'], 0.5)
+    service = Service('localhost:1234', '@/path/to/config.json', ['sleep', '5'], 0.5)
     service.run()
 
 Development
