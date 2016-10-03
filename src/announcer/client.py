@@ -31,10 +31,10 @@ def main():
 
     parser.add_argument(
         '--agent',
-        default=os.getenv('CONSUL_ANNOUNCER_ADDRESS', 'localhost'),
+        default=os.getenv('CONSUL_ANNOUNCER_AGENT', 'localhost'),
         help="Consul agent address: hostname[:port]. "
              "Default: localhost (default port is 8500). "
-             "You can also use CONSUL_ANNOUNCER_ADDRESS env variable.",
+             "You can also use CONSUL_ANNOUNCER_AGENT env variable.",
         metavar='hostname[:port]'
     )
 

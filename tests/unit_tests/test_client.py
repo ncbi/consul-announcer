@@ -24,6 +24,10 @@ def fake_service(monkeypatch):
     """
     monkeypatch.setattr(Service, '__init__', lambda *args, **kwargs: None)
     monkeypatch.setattr(Service, 'run', lambda self: None)
+    monkeypatch.delenv('CONSUL_ANNOUNCER_CONFIG', False)
+    monkeypatch.delenv('CONSUL_ANNOUNCER_AGENT', False)
+    monkeypatch.delenv('CONSUL_ANNOUNCER_INTERVAL', False)
+    monkeypatch.delenv('CONSUL_ANNOUNCER_TOKEN', False)
 
 
 @pytest.mark.parametrize('command', [
@@ -47,6 +51,128 @@ def test_client_help_message(command, monkeypatch, capfd):
     out, err = capfd.readouterr()
     # Check that help message was printed
     assert "Service announcer for Consul." in out
+
+
+def test_client_config_argument_correct(monkeypatch, capfd):
+    """
+    Test client's ``--config`` argument correctly passed.
+
+    :param monkeypatch: pytest "patching" fixture
+    :param capfd: pytest fixture to capture command output
+    """
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer --config=... -- ...'.split())
+    main()
+    # No output expected - execution went fine
+    assert capfd.readouterr() == ('', '')
+
+    monkeypatch.setenv('CONSUL_ANNOUNCER_CONFIG', '...')
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer -- ...'.split())
+    main()
+    # No output expected - execution went fine
+    assert capfd.readouterr() == ('', '')
+
+
+def test_client_config_argument_wrong(monkeypatch, capfd):
+    """
+    Test client's ``--config`` argument missing.
+
+    :param monkeypatch: pytest "patching" fixture
+    :param capfd: pytest fixture to capture command output
+    """
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer -- ...'.split())
+    with pytest.raises(SystemExit) as e:
+        main()
+    # Exit code is 2 in case of misconfiguration
+    assert e.value.code == 2
+    out, err = capfd.readouterr()
+    # Client misconfiguration error message
+    assert "consul-announcer: error: {}".format(
+        "argument --config is required" if sys.version < "3"
+        else "the following arguments are required: --config"
+    ) in err
+
+
+def test_client_agent_argument(monkeypatch):
+    """
+    Test client's ``--agent`` argument correctly passed or missing.
+
+    :param monkeypatch: pytest "patching" fixture
+    """
+    test_kwargs = {}
+    monkeypatch.setattr(Service, '__init__', lambda *args, **kwargs: test_kwargs.update(kwargs))
+
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer --config=... -- ...'.split())
+    main()
+    # No output expected - execution went fine
+    assert test_kwargs['agent_address'] == 'localhost'
+
+    monkeypatch.setenv('CONSUL_ANNOUNCER_AGENT', '1.2.3.4')
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer --config=... -- ...'.split())
+    main()
+    # No output expected - execution went fine
+    assert test_kwargs['agent_address'] == '1.2.3.4'
+
+    monkeypatch.setattr(
+        sys, 'argv', 'consul-announcer --config=... --agent=4.5.6.7:8900 -- ...'.split()
+    )
+    main()
+    # No output expected - execution went fine
+    assert test_kwargs['agent_address'] == '4.5.6.7:8900'
+
+
+def test_client_interval_argument(monkeypatch):
+    """
+    Test client's ``--interval`` argument correctly passed or missing.
+
+    :param monkeypatch: pytest "patching" fixture
+    """
+    test_kwargs = {}
+    monkeypatch.setattr(Service, '__init__', lambda *args, **kwargs: test_kwargs.update(kwargs))
+
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer --config=... -- ...'.split())
+    main()
+    # No output expected - execution went fine
+    assert test_kwargs['interval'] is None
+
+    monkeypatch.setenv('CONSUL_ANNOUNCER_INTERVAL', '2')
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer --config=... -- ...'.split())
+    main()
+    # No output expected - execution went fine
+    assert test_kwargs['interval'] == 2
+
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer --config=... --interval=6 -- ...'.split())
+    main()
+    # No output expected - execution went fine
+    assert test_kwargs['interval'] == 6
+
+
+def test_client_token_argument(monkeypatch):
+    """
+    Test client's ``--token`` argument correctly passed or missing.
+
+    :param monkeypatch: pytest "patching" fixture
+    """
+    test_kwargs = {}
+    monkeypatch.setattr(Service, '__init__', lambda *args, **kwargs: test_kwargs.update(kwargs))
+
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer --config=... -- ...'.split())
+    main()
+    # No output expected - execution went fine
+    assert test_kwargs['token'] is None
+
+    monkeypatch.setenv('CONSUL_ANNOUNCER_TOKEN', '11112222-3333-4444-5555-666677778888')
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer --config=... -- ...'.split())
+    main()
+    # No output expected - execution went fine
+    assert test_kwargs['token'] == '11112222-3333-4444-5555-666677778888'
+
+    monkeypatch.setattr(
+        sys, 'argv',
+        'consul-announcer --config=... --token=aaaabbbb-cccc-dddd-eeee-ffff00001111 -- ...'.split()
+    )
+    main()
+    # No output expected - execution went fine
+    assert test_kwargs['token'] == 'aaaabbbb-cccc-dddd-eeee-ffff00001111'
 
 
 @pytest.mark.parametrize('command, mode', [
@@ -95,63 +221,34 @@ def test_client_output_verbosity(command, mode, monkeypatch, capfd):
             assert msg[lvl] not in out
 
 
-@pytest.mark.parametrize('command, is_correct', [
-    ['consul-announcer -- ...', False],
-    ['consul-announcer --config=... -- ...', True]
-], ids=['wrong', 'correct'])
-def test_client_config_argument(command, is_correct, monkeypatch, capfd):
+def test_client_command_argument_correct(monkeypatch, capfd):
     """
-    Test client's required argument: ``--config``.
+    Test client's `` -- command [arguments]`` argument correctly passed.
 
-    :param command: custom test function parameter: command to invoke
-    :param is_correct: custom test function parameter: is the command correctly configured
     :param monkeypatch: pytest "patching" fixture
     :param capfd: pytest fixture to capture command output
     """
-    monkeypatch.setattr(sys, 'argv', command.split())
-    if is_correct:
-        main()
-        # No output expected - execution went fine
-        assert capfd.readouterr() == ('', '')
-    else:
-        with pytest.raises(SystemExit) as e:
-            main()
-        # Exit code is 2 in case of misconfiguration
-        assert e.value.code == 2
-        out, err = capfd.readouterr()
-        # Client misconfiguration error message
-        assert "consul-announcer: error: {}".format(
-            "argument --config is required" if sys.version < "3"
-            else "the following arguments are required: --config"
-        ) in err
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer --config=... -- ...'.split())
+    main()
+    # No output expected - execution went fine
+    assert capfd.readouterr() == ('', '')
 
 
-@pytest.mark.parametrize('command, is_correct', [
-    ['consul-announcer --config=...', False],
-    ['consul-announcer --config=... -- ...', True]
-], ids=['wrong', 'correct'])
-def test_client_command_argument(command, is_correct, monkeypatch, capfd):
+def test_client_command_argument_wrong(monkeypatch, capfd):
     """
-    Test client's required argument: `` -- command [arguments]``.
+    Test client's `` -- command [arguments]`` argument missing.
 
-    :param command: custom test function parameter: command to invoke
-    :param is_correct: custom test function parameter: is the command correctly configured
     :param monkeypatch: pytest "patching" fixture
     :param capfd: pytest fixture to capture command output
     """
-    monkeypatch.setattr(sys, 'argv', command.split())
-    if is_correct:
+    monkeypatch.setattr(sys, 'argv', 'consul-announcer --config=...'.split())
+    with pytest.raises(SystemExit) as e:
         main()
-        # No output expected - execution went fine
-        assert capfd.readouterr() == ('', '')
-    else:
-        with pytest.raises(SystemExit) as e:
-            main()
-        # Exit code is 2 in case of misconfiguration
-        assert e.value.code == 2
-        out, err = capfd.readouterr()
-        # Client misconfiguration error message
-        assert "consul-announcer: error: command is not specified" in err
+    # Exit code is 2 in case of misconfiguration
+    assert e.value.code == 2
+    out, err = capfd.readouterr()
+    # Client misconfiguration error message
+    assert "consul-announcer: error: command is not specified" in err
 
 
 @pytest.mark.parametrize('exception', [

@@ -30,7 +30,7 @@ Usage
         -h, --help                Show this help message and exit.
         --agent hostname[:port]   Consul agent address: hostname[:port].
                                   Default: localhost (default port is 8500).
-                                  You can also use CONSUL_ANNOUNCER_ADDRESS env variable.
+                                  You can also use CONSUL_ANNOUNCER_AGENT env variable.
         --config "JSON or @path"  Consul configuration JSON (required).
                                   If starts with @ - considered as file path.
                                   You can also use CONSUL_ANNOUNCER_CONFIG env variable.
@@ -80,7 +80,7 @@ Default agent address is ``localhost`` (with default port ``8500``). You can pro
 
     consul-announcer --agent=1.2.3.4:5678 ...
 
-You can also use ``CONSUL_ANNOUNCER_ADDRESS`` env variable.
+You can also use ``CONSUL_ANNOUNCER_AGENT`` env variable.
 
 ``--token``
 ~~~~~~~~~~~
