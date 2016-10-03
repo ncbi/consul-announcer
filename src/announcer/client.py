@@ -42,15 +42,16 @@ def main():
         '--config',
         required='CONSUL_ANNOUNCER_CONFIG' not in os.environ,
         default=os.getenv('CONSUL_ANNOUNCER_CONFIG'),
-        help="Consul configuration file (required)."
+        help="Consul configuration JSON (required). "
+             "If starts with @ - considered as file path. "
              "You can also use CONSUL_ANNOUNCER_CONFIG env variable.",
-        metavar='path'
+        metavar='"JSON or @path"'
     )
 
     parser.add_argument(
         '--token',
         default=os.getenv('CONSUL_ANNOUNCER_TOKEN'),
-        help="Consul ACL token."
+        help="Consul ACL token. "
              "You can also use CONSUL_ANNOUNCER_TOKEN env variable.",
         metavar='acl-token'
     )
@@ -58,8 +59,8 @@ def main():
     parser.add_argument(
         '--interval',
         default=os.getenv('CONSUL_ANNOUNCER_INTERVAL'),
-        help="interval for periodic marking all TTL checks as passed "
-             "(should be less than min TTL)."
+        help="interval for periodic marking all TTL checks as passed, in seconds. "
+             "Should be less than min TTL. "
              "You can also use CONSUL_ANNOUNCER_INTERVAL env variable.",
         metavar='seconds',
         type=float
@@ -103,6 +104,6 @@ def main():
     except ConnectionError as e:
         logger.error("Can't connect to \"{}\"".format(e.request.url))
         sys.exit(1)
-    except (AnnouncerImproperlyConfigured, OSError) as e:
+    except (AnnouncerImproperlyConfigured, OSError, ValueError) as e:
         logger.error(e)
         sys.exit(1)

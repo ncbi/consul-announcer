@@ -1,3 +1,4 @@
 python-consul~=0.6.0
-# 'requests' will be installed as 'python-consul' dependency, we just make sure it's installed
+# 'requests' and 'six' sould be installed as 'python-consul' dependencies; we just make sure
 requests
+six

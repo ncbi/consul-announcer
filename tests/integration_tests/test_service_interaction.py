@@ -17,7 +17,7 @@ def test_subprocess_alive(fake_consul):
 
     :param fake_consul: custom fixture to disable calls to Consul API
     """
-    service = Service('localhost', 'tests/config/correct.json', ['sleep', '0.5'], None, 0.2)
+    service = Service('localhost', '@tests/config/correct.json', ['sleep', '0.5'], None, 0.2)
     service.poll = lambda: None
     service.run()
     assert service.process.poll() is None
@@ -34,12 +34,16 @@ def test_subprocess_polling(fake_consul, caplog, monkeypatch):
     :param monkeypatch: pytest "patching" fixture
     """
     monkeypatch.setattr(root_logger, 'level', logging.DEBUG)
-    service = Service('localhost', 'tests/config/correct.json', ['sleep', '0.2'], None, 0.1)
+    service = Service(
+        'localhost', '@tests/config/correct.json', ['sleep', '0.2'], None, 0.1
+    )
     service.run()
     assert service.process.poll() == 0
 
     # No TTL checks - log a message
-    service = Service('localhost', 'tests/config/correct-no-ttl.json', ['sleep', '0.2'], None, 0.1)
+    service = Service(
+        'localhost', '@tests/config/correct-no-ttl.json', ['sleep', '0.2'], None, 0.1
+    )
     service.run()
     assert service.process.poll() == 0
     assert caplog.records[-1].message == "No TTL checks registered"
@@ -51,7 +55,7 @@ def test_subprocess_cleanup(fake_consul):
 
     :param fake_consul: custom fixture to disable calls to Consul API
     """
-    service = Service('localhost', 'tests/config/correct.json', ['tail', '-f', '/dev/null'])
+    service = Service('localhost', '@tests/config/correct.json', ['tail', '-f', '/dev/null'])
     service.poll = lambda: None
     service.run()
     service.__del__()  # this method is called by Python on garbage collection
@@ -85,4 +89,4 @@ def test_consul_interaction():
     # HTTP 404 while deregisternig this service
     responses.add(responses.GET, api_url.format('service/deregister/service-2'), status=404)
 
-    Service('localhost:1234', 'tests/config/correct.json', ['sleep', '0.2'], None, 0.1).run()
+    Service('localhost:1234', '@tests/config/correct.json', ['sleep', '0.2'], None, 0.1).run()
