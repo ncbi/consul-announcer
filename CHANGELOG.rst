@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+Unreleased
+----------
+
+Fixed
+~~~~~
+
+- Service announcement without Consul token specified
+
 1.0.0 - 2016-10-03
 ------------------
 
