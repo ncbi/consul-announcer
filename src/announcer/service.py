@@ -204,10 +204,14 @@ class Service(object):
             logger.debug("Registering service \"{}\": {}".format(service_id, service_conf))
             # Use low-level ``self.consul.http`` instead of ``self.consul.agent.service.register``
             # because we don't want to parse the service config - we just pass it as-is.
+            params = {}
+            if self.consul.token:
+                params['token'] = self.consul.token
+
             success = self.consul.http.put(
                 CB.bool(),
                 '/v1/agent/service/register',
-                params={'token': self.consul.token},
+                params=params,
                 data=json.dumps(service_conf, default=dict)
             )
             if not success:
